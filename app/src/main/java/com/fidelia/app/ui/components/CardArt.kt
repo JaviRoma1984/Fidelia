@@ -22,14 +22,21 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.fidelia.app.data.CardRepository
@@ -98,13 +105,27 @@ private fun StoreLogoBox(store: Store, modifier: Modifier) {
                 center = Offset(size.width * 0.05f, size.height),
             )
         }
+        // Sombra suave: sin ella, un texto blanco sobre un fondo claro (amarillo) no se lee.
+        val lightText = store.logoParts != null || store.textColor.luminance() > 0.5f
+        val shadow = if (lightText) Shadow(Color.Black.copy(alpha = 0.28f), Offset(0f, 3f), 6f) else Shadow.None
+        val parts = store.logoParts
+        val label = if (parts != null) {
+            buildAnnotatedString {
+                parts.forEach { part ->
+                    withStyle(SpanStyle(color = part.color)) { append(part.text) }
+                }
+            }
+        } else {
+            AnnotatedString(store.name)
+        }
         Text(
-            text = store.name,
+            text = label,
             color = store.textColor,
             fontSize = textSize,
             lineHeight = textSize * 1.1f,
             fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Center,
+            style = TextStyle(shadow = shadow),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = maxWidth * 0.08f),

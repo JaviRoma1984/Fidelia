@@ -21,6 +21,10 @@ imagen de la galería (por ejemplo, una captura de pantalla).
 - Los «logos» del listado de tiendas no son los oficiales: son tarjetas dibujadas
   con el nombre y un color parecido al de la marca. Para el logo real, cargar la
   propia imagen al crear o editar la tarjeta.
+- El listado incluye las tiendas más habituales y los establecimientos del centro
+  comercial Parque Principado (Oviedo), tomados de su web el 26-10-2026. Los colores
+  de marca son aproximados; las tiendas sin color conocido usan un color automático.
+  `StoresTest` comprueba que no haya ids repetidos y que la búsqueda ignore acentos.
 - Datos en el almacenamiento privado de la app: `cards.json` (con copia `.bak`) e
   imágenes en `images/`. Se escribe con fichero temporal + renombrado para que un
   corte no deje el fichero a medias.
