@@ -6,13 +6,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewModelScope
+import com.fidelia.app.barcode.BarcodeRenderer
+import com.fidelia.app.data.CardMerge
 import com.fidelia.app.data.CardRepository
+import com.fidelia.app.data.CardTransfer
 import com.fidelia.app.data.LoyaltyCard
 import com.fidelia.app.data.Store
+import com.fidelia.app.data.Stores
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 import java.util.UUID
 
 /** La tarjeta que se esta creando o editando en el formulario. */
@@ -175,6 +182,135 @@ class FideliaViewModel(application: Application) : AndroidViewModel(application)
         // El borrador se queda como esta: la pantalla del formulario sigue visible
         // mientras se anima la salida y no debe verse vaciarse de golpe.
         baseline = draft
+    }
+
+    /** Guarda el orden que el usuario ha dado a las tarjetas (el de la lista es el orden guardado). */
+    fun reorder(ids: List<String>) {
+        val byId = cards.associateBy { it.id }
+        val reordered = ids.mapNotNull(byId::get) + cards.filter { it.id !in ids }
+        if (reordered == cards) return
+        if (!repo.save(reordered)) {
+            message = "No se ha podido guardar el nuevo orden."
+            return
+        }
+        cards = reordered
+    }
+
+    // ---- Copia de las tarjetas: exportar e importar ----
+
+    /** Resultado de una importacion, para ensenarselo al usuario. */
+    class ImportReport(
+        val added: Int,
+        val skipped: Int,
+        /** Nombres con los que se anadieron las tarjetas que repetian nombre con otro codigo. */
+        val renamed: List<String>,
+        val invalid: Int,
+    )
+
+    var importReport by mutableStateOf<ImportReport?>(null)
+        private set
+
+    fun dismissImportReport() {
+        importReport = null
+    }
+
+    /** Escribe el archivo de copia en el sitio que haya elegido el usuario. */
+    fun saveExportTo(uri: Uri) {
+        val snapshot = cards
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                try {
+                    val out = app.contentResolver.openOutputStream(uri, "w") ?: return@withContext false
+                    CardTransfer.write(snapshot, repo::readImageBytes, out)
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+            }
+            message = if (ok) "Archivo guardado" else "No se ha podido guardar el archivo."
+        }
+    }
+
+    /** Crea el archivo de copia en la cache y devuelve su Uri para compartirlo. */
+    suspend fun createShareFile(): Uri? {
+        val snapshot = cards
+        val app = getApplication<Application>()
+        return withContext(Dispatchers.IO) {
+            try {
+                val dir = File(app.cacheDir, "exports").apply { mkdirs() }
+                dir.listFiles()?.forEach { it.delete() }
+                val file = File(dir, CardTransfer.suggestedFileName())
+                FileOutputStream(file).use { CardTransfer.write(snapshot, repo::readImageBytes, it) }
+                FileProvider.getUriForFile(app, "${app.packageName}.fileprovider", file)
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    fun importFrom(uri: Uri) {
+        val current = cards
+        viewModelScope.launch {
+            when (val result = withContext(Dispatchers.IO) { doImport(uri, current) }) {
+                ImportResult.Unreadable ->
+                    message = "Ese archivo no es una copia de Fidelia o está dañado."
+                ImportResult.SaveFailed ->
+                    message = "No se han podido guardar las tarjetas importadas. Inténtalo de nuevo."
+                is ImportResult.Done -> {
+                    cards = result.cards
+                    importReport = result.report
+                }
+            }
+        }
+    }
+
+    private sealed interface ImportResult {
+        data object Unreadable : ImportResult
+        data object SaveFailed : ImportResult
+        class Done(val cards: List<LoyaltyCard>, val report: ImportReport) : ImportResult
+    }
+
+    private fun doImport(uri: Uri, current: List<LoyaltyCard>): ImportResult {
+        val read: CardTransfer.ReadResult? = try {
+            getApplication<Application>().contentResolver.openInputStream(uri)?.use(CardTransfer::read)
+        } catch (e: Exception) {
+            null
+        }
+        if (read == null) return ImportResult.Unreadable
+
+        // Solo entran las tarjetas cuyo codigo se puede dibujar.
+        val valid = read.cards.filter { BarcodeRenderer.render(it.barcodeValue, it.barcodeFormat) != null }
+        val invalid = read.invalid + (read.cards.size - valid.size)
+
+        val plan = CardMerge.plan(current, valid)
+        val writtenImages = mutableListOf<String>()
+        val now = System.currentTimeMillis()
+        val added = plan.toAdd.map { planned ->
+            val source = planned.incoming
+            val image = source.image?.let(repo::saveImageBytes)?.also { writtenImages += it }
+            LoyaltyCard(
+                id = UUID.randomUUID().toString(),
+                name = planned.finalName,
+                storeId = source.storeId?.takeIf { Stores.find(it) != null },
+                imageFile = image,
+                barcodeValue = source.barcodeValue,
+                barcodeFormat = BarcodeRenderer.render(source.barcodeValue, source.barcodeFormat)!!.format,
+                createdAt = if (source.createdAt > 0) source.createdAt else now,
+            )
+        }
+        val updated = current + added
+        if (added.isNotEmpty() && !repo.save(updated)) {
+            writtenImages.forEach(repo::deleteImage)
+            return ImportResult.SaveFailed
+        }
+        val report = ImportReport(
+            added = added.size,
+            skipped = plan.skipped,
+            renamed = plan.toAdd.filter { it.renamed }.map { it.finalName },
+            invalid = invalid,
+        )
+        return ImportResult.Done(updated, report)
     }
 
     fun delete(id: String) {

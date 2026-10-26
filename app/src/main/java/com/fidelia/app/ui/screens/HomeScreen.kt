@@ -72,6 +72,8 @@ fun HomeScreen(vm: FideliaViewModel) {
                 onClick = vm::startNew,
             )
         }
+        TransferSection(vm)
+        Spacer(Modifier.height(24.dp))
         Spacer(Modifier.navigationBarsPadding())
     }
 }

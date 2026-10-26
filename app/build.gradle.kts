@@ -26,6 +26,9 @@ android {
     buildTypes {
         debug {
             isDebuggable = true
+            // Para probar en el movil una copia aparte, con sus propios datos, sin tocar
+            // la app real: gradlew assembleDebug -PidSuffix=.pruebas
+            applicationIdSuffix = (project.findProperty("idSuffix") as String?).orEmpty()
         }
         release {
             isMinifyEnabled = false
@@ -90,4 +93,6 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
 
     testImplementation("junit:junit:4.13.2")
+    // org.json de verdad para las pruebas de JVM (el de android.jar es un simulacro vacio).
+    testImplementation("org.json:json:20240303")
 }

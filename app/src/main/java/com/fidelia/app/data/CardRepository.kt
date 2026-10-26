@@ -2,6 +2,7 @@ package com.fidelia.app.data
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.net.Uri
@@ -66,6 +67,29 @@ class CardRepository(private val context: Context) {
         File(imagesDir, name).delete()
     }
 
+    /** Bytes de una imagen propia ya guardada (para exportarla). */
+    fun readImageBytes(name: String): ByteArray? = try {
+        File(imagesDir, name).takeIf { it.isFile }?.readBytes()
+    } catch (e: Exception) {
+        null
+    }
+
+    /** Guarda una imagen que viene de un archivo de copia, solo si de verdad es una imagen. */
+    fun saveImageBytes(bytes: ByteArray): String? = try {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        val ok = bounds.outWidth in 1..MAX_IMPORTED_SIDE && bounds.outHeight in 1..MAX_IMPORTED_SIDE
+        if (!ok) {
+            null
+        } else {
+            val name = "img_${UUID.randomUUID()}.jpg"
+            File(imagesDir, name).writeBytes(bytes)
+            name
+        }
+    } catch (e: Exception) {
+        null
+    }
+
     /** Borra imagenes que ninguna tarjeta usa (restos de una carga cancelada). */
     fun cleanupOrphans(cards: List<LoyaltyCard>) {
         val used = cards.mapNotNull { it.imageFile }.toSet()
@@ -105,6 +129,7 @@ class CardRepository(private val context: Context) {
     companion object {
         private const val IMAGES_DIR = "images"
         private const val MAX_IMAGE_SIDE = 1280
+        private const val MAX_IMPORTED_SIDE = 8000
 
         fun imageFile(context: Context, name: String): File =
             File(File(context.filesDir, IMAGES_DIR), name)

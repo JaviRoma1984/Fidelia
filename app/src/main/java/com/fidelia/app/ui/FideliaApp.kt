@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -41,11 +42,13 @@ fun FideliaApp(vm: FideliaViewModel) {
     // El formulario y el escaner tienen su propio BackHandler (el mas reciente gana).
     BackHandler(enabled = vm.stack.size > 1) { vm.back() }
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+    // Surface fija el color del texto sobre el fondo (si no, el texto sale negro en modo oscuro).
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
     ) {
+    Box(Modifier.fillMaxSize()) {
         AnimatedContent(
             targetState = vm.stack.last(),
             transitionSpec = {
@@ -76,5 +79,6 @@ fun FideliaApp(vm: FideliaViewModel) {
                 .navigationBarsPadding()
                 .padding(16.dp),
         )
+    }
     }
 }

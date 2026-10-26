@@ -10,8 +10,16 @@ código de barras en caja. Sin cuentas, sin internet: todo se queda en el móvil
    galería) y se escanea el código de barras con la cámara.
 2. **Mostrar tarjetas**: rejilla con la imagen y el nombre de cada tarjeta. Al
    pulsar una se abre su código de barras en grande y con el brillo al máximo.
+   Manteniendo pulsada una tarjeta se selecciona y se puede arrastrar para cambiarla
+   de sitio; al soltarla se queda ahí y el orden se guarda.
 3. **Editar** y **eliminar** (siempre pide confirmación) desde la lista (⋮) o desde
    la ficha de la tarjeta. Todas las pantallas tienen botón «Atrás».
+4. **Copia y compartir** (pantalla de inicio): **Exportar** crea un archivo `.fidelia`
+   (un zip con las tarjetas, sus imágenes y los códigos) que se comparte o se guarda en
+   el móvil; **Importar** lo lee y añade las tarjetas. Si una tarjeta del archivo tiene
+   el mismo nombre y el mismo código que una existente, se omite; si tiene el mismo
+   nombre pero otro código, se añade como «Nombre (importada)». Importar dos veces el
+   mismo archivo no duplica nada.
 
 Si la cámara no lee el código, se puede escribir el número a mano o leerlo de una
 imagen de la galería (por ejemplo, una captura de pantalla).
@@ -39,6 +47,14 @@ $env:JAVA_HOME = "C:\Program Files\Java\jdk-23"
 .\gradlew.bat assembleDebug
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r app\build\outputs\apk\debug\app-debug.apk
 ```
+
+Para probar en el móvil una copia aparte, con sus propios datos y sin tocar la app real:
+
+```powershell
+.\gradlew.bat assembleDebug '-PidSuffix=.pruebas'
+```
+
+Se instala como `com.fidelia.app.pruebas` junto a la app normal (desinstalarla al terminar).
 
 ## Pila
 
