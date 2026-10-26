@@ -19,12 +19,14 @@ fun LoyaltyMenuScreen(vm: FideliaViewModel) {
             subtitle = countText(vm.cards.size),
             icon = Icons.Rounded.Style,
             onClick = vm::openCardList,
+            tall = true,
         )
         ActionCard(
             title = "Añadir tarjeta",
             subtitle = "Guarda una tarjeta nueva en tu móvil",
             icon = Icons.Rounded.AddCard,
             onClick = vm::startNew,
+            tall = true,
         )
     }
 }
@@ -38,12 +40,14 @@ fun BusinessMenuScreen(vm: FideliaViewModel) {
             subtitle = countText(vm.businessCards.size),
             icon = Icons.Rounded.Badge,
             onClick = vm::openBusinessList,
+            tall = true,
         )
         ActionCard(
             title = "Añadir tarjeta de visita",
             subtitle = "Con un icono de oficio o una foto de la tarjeta",
             icon = Icons.Rounded.PersonAdd,
             onClick = vm::startNewBusiness,
+            tall = true,
         )
     }
 }

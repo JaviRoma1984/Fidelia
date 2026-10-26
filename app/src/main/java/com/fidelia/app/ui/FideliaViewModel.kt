@@ -3,6 +3,7 @@ package com.fidelia.app.ui
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import android.provider.ContactsContract
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -341,6 +342,36 @@ class FideliaViewModel(application: Application) : AndroidViewModel(application)
 
     fun setBusinessPhone2(value: String) {
         businessDraft = businessDraft.copy(phone2 = PhoneNumbers.sanitizeInput(value))
+    }
+
+    /**
+     * Rellena el telefono 1 o el 2 con el numero del contacto que el usuario ha elegido en el
+     * selector de contactos del sistema. [uri] es la fila de ese numero; el propio selector da
+     * permiso para leerla, asi que la app no necesita el permiso de contactos.
+     */
+    fun setBusinessPhoneFromContact(slot: Int, uri: Uri) {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            val number = withContext(Dispatchers.IO) {
+                try {
+                    app.contentResolver.query(
+                        uri,
+                        arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                        null,
+                        null,
+                        null,
+                    )?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            val clean = number?.let(PhoneNumbers::sanitizeInput)?.trim()
+            when {
+                clean.isNullOrEmpty() -> message = "No he podido leer el teléfono de ese contacto."
+                slot == 1 -> setBusinessPhone1(clean)
+                else -> setBusinessPhone2(clean)
+            }
+        }
     }
 
     fun setBusinessEmail(value: String) {

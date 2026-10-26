@@ -159,11 +159,11 @@ private fun Header(onSettings: () -> Unit, modifier: Modifier = Modifier) {
             Column(
                 Modifier
                     .align(Alignment.Center)
-                    .padding(horizontal = 22.dp, vertical = 24.dp),
+                    .padding(horizontal = 22.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                LogoMark(Modifier.size(h * 0.36f), barColor = brand.headerStart)
-                Spacer(Modifier.height(h * 0.045f))
+                LogoMark(Modifier.size(h * 0.46f), barColor = brand.headerStart)
+                Spacer(Modifier.height(h * 0.04f))
                 Text(
                     "Fidelia",
                     style = TextStyle(

@@ -32,9 +32,10 @@ class TradeIconsTest {
 
     @Test
     fun `estan los oficios pedidos por el usuario`() {
-        for (id in listOf("emergencias", "medico", "clinica", "peluqueria")) {
+        for (id in listOf("emergencias", "medico", "clinica", "peluqueria", "seguros")) {
             assertNotNull("falta el oficio $id", TradeIcons.find(id))
         }
+        assertEquals("Seguros", TradeIcons.find("seguros")!!.label)
         assertEquals("Peluquería", TradeIcons.find("peluqueria")!!.label)
         // El usuario no quiere un "Peluquero" aparte: con "Peluquería" (tijeras) le vale.
         assertNull(TradeIcons.find("peluquero"))

@@ -30,6 +30,7 @@ import androidx.compose.material.icons.rounded.Roofing
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.Store
+import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material.icons.rounded.Yard
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -96,6 +97,7 @@ object TradeIcons {
         TradeIcon("restaurante", "Restaurante", Icons.Rounded.Restaurant, Color(0xFFDC2626)),
         TradeIcon("abogado", "Abogado", Icons.Rounded.Gavel, Color(0xFF1E3A8A)),
         TradeIcon("gestoria", "Gestoría", Icons.Rounded.AccountBalance, Color(0xFF3730A3)),
+        TradeIcon("seguros", "Seguros", Icons.Rounded.VerifiedUser, Color(0xFF2563EB)),
         TradeIcon("informatica", "Informática", Icons.Rounded.Computer, Color(0xFF4338CA)),
         TradeIcon("fotografia", "Fotografía", Icons.Rounded.CameraAlt, Color(0xFF52525B)),
         TradeIcon("transporte", "Transporte", Icons.Rounded.LocalShipping, Color(0xFF0C4A6E)),

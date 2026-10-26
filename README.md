@@ -29,9 +29,12 @@ Un menú con **Ver tarjetas** y **Añadir tarjeta**.
 
 Un menú con **Ver tarjetas de visita** y **Añadir tarjeta de visita**.
 
-1. **Añadir**: un **icono de oficio** de la lista (Emergencias, Médico, Fontanero,
-   Electricista…) o una **foto de la tarjeta**; y la empresa, el titular, hasta **dos
-   teléfonos** y un **correo** (todo opcional salvo empresa o titular).
+1. **Añadir**: un **icono de oficio** de la lista (Emergencias, Médico, Seguros,
+   Fontanero, Electricista…) o una **foto de la tarjeta**; y la empresa, el titular, hasta
+   **dos teléfonos** y un **correo** (todo opcional salvo empresa o titular). Cada teléfono
+   se puede **escribir** o **elegir de los contactos del móvil** con el icono de contactos
+   del campo: el selector de contactos del sistema entrega solo el número elegido, así que
+   la app no pide permiso para leer la agenda.
 2. **Ver**: igual que las de fidelización, y también se pueden reordenar arrastrando.
 3. **Ficha**: pulsar un teléfono pide confirmación («¿Llamar ahora?») y, si se acepta,
    llama directamente (la primera vez Android pide el permiso de llamadas; si no se da,

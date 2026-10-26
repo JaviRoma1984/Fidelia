@@ -1,10 +1,16 @@
 package com.fidelia.app.ui.screens
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.ContactsContract
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,11 +33,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -41,8 +49,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -110,6 +120,20 @@ fun BusinessFormScreen(vm: FideliaViewModel) {
         val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
             PackageManager.PERMISSION_GRANTED
         if (granted) takePicture.launch(captureUri) else cameraPermission.launch(Manifest.permission.CAMERA)
+    }
+
+    // ---- Elegir un telefono de la agenda del movil ----
+    var phoneSlot by rememberSaveable { mutableIntStateOf(1) }
+    val pickPhone = rememberLauncherForActivityResult(PickPhoneContract) { uri ->
+        if (uri != null) vm.setBusinessPhoneFromContact(phoneSlot, uri)
+    }
+    fun pickPhoneFor(slot: Int) {
+        phoneSlot = slot
+        try {
+            pickPhone.launch(Unit)
+        } catch (e: Exception) {
+            vm.showMessage("No hay ninguna aplicación de contactos.")
+        }
     }
 
     Scaffold(
@@ -226,12 +250,21 @@ fun BusinessFormScreen(vm: FideliaViewModel) {
                 onValueChange = vm::setBusinessPhone1,
                 label = "Teléfono 1",
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+                trailing = { ContactsButton { pickPhoneFor(1) } },
             )
             CenteredTextField(
                 value = d.phone2,
                 onValueChange = vm::setBusinessPhone2,
                 label = "Teléfono 2 (opcional)",
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+                trailing = { ContactsButton { pickPhoneFor(2) } },
+            )
+            Text(
+                "Escribe el teléfono o elígelo de tu agenda con el icono de contactos.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
             CenteredTextField(
                 value = d.email,
@@ -262,6 +295,30 @@ fun BusinessFormScreen(vm: FideliaViewModel) {
                     vm.back()
                 }) { Text("Salir sin guardar") }
             },
+        )
+    }
+}
+
+/**
+ * El selector de contactos del sistema, filtrado a numeros de telefono: devuelve la fila del
+ * numero elegido (con permiso para leerla) o null si se cancela.
+ */
+private object PickPhoneContract : ActivityResultContract<Unit, Uri?>() {
+    override fun createIntent(context: Context, input: Unit): Intent =
+        Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+
+    override fun parseResult(resultCode: Int, intent: Intent?): Uri? =
+        if (resultCode == Activity.RESULT_OK) intent?.data else null
+}
+
+/** Boton con el icono de contactos que va dentro del campo de telefono. */
+@Composable
+private fun ContactsButton(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(
+            Icons.Rounded.Contacts,
+            contentDescription = "Elegir un teléfono de tus contactos",
+            tint = MaterialTheme.colorScheme.primary,
         )
     }
 }
