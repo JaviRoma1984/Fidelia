@@ -33,13 +33,26 @@ object CardTransfer {
     private const val MAX_NAME = 100
     private const val MAX_CODE = 500
 
-    class ReadResult(val cards: List<IncomingCard>, val invalid: Int)
+    class ReadResult(
+        val cards: List<IncomingCard>,
+        val invalid: Int,
+        val businessCards: List<IncomingBusiness> = emptyList(),
+        val invalidBusiness: Int = 0,
+    )
 
     fun suggestedFileName(now: Long = System.currentTimeMillis()): String =
         "Fidelia-tarjetas-" + SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date(now)) + ".fidelia"
 
-    /** Escribe las tarjetas en [out] y lo cierra. [readImage] da los bytes de una imagen propia. */
-    fun write(cards: List<LoyaltyCard>, readImage: (String) -> ByteArray?, out: OutputStream) {
+    /**
+     * Escribe las tarjetas en [out] y lo cierra. [readImage] da los bytes de una imagen propia.
+     * Los archivos con solo tarjetas de fidelizacion (sin [businessCards]) siguen siendo validos.
+     */
+    fun write(
+        cards: List<LoyaltyCard>,
+        readImage: (String) -> ByteArray?,
+        out: OutputStream,
+        businessCards: List<BusinessCard> = emptyList(),
+    ) {
         val images = LinkedHashMap<String, ByteArray>()
         val array = JSONArray()
         cards.forEachIndexed { index, card ->
@@ -57,11 +70,30 @@ object CardTransfer {
             }
             array.put(item)
         }
+        val businessArray = JSONArray()
+        businessCards.forEachIndexed { index, card ->
+            val item = JSONObject()
+                .put("company", card.company)
+                .put("holder", card.holder)
+                .put("phone1", card.phone1)
+                .put("phone2", card.phone2)
+                .put("email", card.email)
+                .put("createdAt", card.createdAt)
+            card.tradeId?.let { item.put("tradeId", it) }
+            val bytes = card.imageFile?.let(readImage)
+            if (bytes != null) {
+                val entry = "${IMAGES_PREFIX}biz_$index.jpg"
+                images[entry] = bytes
+                item.put("image", entry)
+            }
+            businessArray.put(item)
+        }
         val root = JSONObject()
             .put("app", APP)
             .put("version", FORMAT_VERSION)
             .put("exportedAt", System.currentTimeMillis())
             .put("cards", array)
+            .put("businessCards", businessArray)
 
         ZipOutputStream(out).use { zip ->
             zip.putNextEntry(ZipEntry(JSON_ENTRY))
@@ -131,7 +163,38 @@ object CardTransfer {
             }
         }
         if (array.length() > MAX_CARDS) invalid += array.length() - MAX_CARDS
-        return ReadResult(cards, invalid)
+
+        // Tarjetas de visita: opcional (los archivos antiguos no la traen).
+        val businessCards = ArrayList<IncomingBusiness>()
+        var invalidBusiness = 0
+        val businessArray = root.optJSONArray("businessCards")
+        if (businessArray != null) {
+            for (i in 0 until minOf(businessArray.length(), MAX_CARDS)) {
+                try {
+                    val item = businessArray.getJSONObject(i)
+                    val company = item.optString("company").trim().take(MAX_NAME)
+                    val holder = item.optString("holder").trim().take(MAX_NAME)
+                    if (company.isEmpty() && holder.isEmpty()) {
+                        invalidBusiness++
+                        continue
+                    }
+                    businessCards += IncomingBusiness(
+                        company = company,
+                        holder = holder,
+                        phone1 = item.optString("phone1").trim().take(PhoneNumbers.MAX_LENGTH),
+                        phone2 = item.optString("phone2").trim().take(PhoneNumbers.MAX_LENGTH),
+                        tradeId = if (item.has("tradeId")) item.getString("tradeId") else null,
+                        image = if (item.has("image")) images[item.getString("image")] else null,
+                        createdAt = item.optLong("createdAt"),
+                        email = Emails.sanitizeInput(item.optString("email")),
+                    )
+                } catch (e: Exception) {
+                    invalidBusiness++
+                }
+            }
+            if (businessArray.length() > MAX_CARDS) invalidBusiness += businessArray.length() - MAX_CARDS
+        }
+        return ReadResult(cards, invalid, businessCards, invalidBusiness)
     }
 
     private fun readLimited(input: InputStream, limit: Int): ByteArray {

@@ -47,6 +47,7 @@ import com.fidelia.app.ui.components.AppTopBar
 import com.fidelia.app.ui.components.BarcodeImage
 import com.fidelia.app.ui.components.CardArt
 import com.fidelia.app.ui.components.ConfirmDeleteDialog
+import com.fidelia.app.ui.components.ScreenTitle
 
 /** La tarjeta abierta: su codigo de barras grande para ensenarlo en caja. */
 @Composable
@@ -65,7 +66,8 @@ fun CardDetailScreen(vm: FideliaViewModel, id: String) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { AppTopBar(title = card.name, onBack = vm::back) },
+        // En la barra solo queda "Atras": el nombre de la tarjeta va debajo, con el contenido.
+        topBar = { AppTopBar(title = "", onBack = vm::back) },
     ) { padding ->
         Column(
             Modifier
@@ -75,6 +77,8 @@ fun CardDetailScreen(vm: FideliaViewModel, id: String) {
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            ScreenTitle(card.name)
+            Spacer(Modifier.height(8.dp))
             CardArt(
                 storeId = card.storeId,
                 imageFile = card.imageFile,

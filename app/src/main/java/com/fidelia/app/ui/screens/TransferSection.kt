@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Save
@@ -33,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.fidelia.app.data.CardTransfer
@@ -76,7 +79,11 @@ fun TransferSection(vm: FideliaViewModel) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedButton(
                 onClick = {
-                    if (vm.cards.isEmpty()) vm.showMessage("Aún no tienes tarjetas que exportar.") else showExport = true
+                    if (vm.cards.isEmpty() && vm.businessCards.isEmpty()) {
+                        vm.showMessage("Aún no tienes tarjetas que exportar.")
+                    } else {
+                        showExport = true
+                    }
                 },
                 contentPadding = PaddingValues(horizontal = 12.dp),
                 modifier = Modifier
@@ -102,7 +109,7 @@ fun TransferSection(vm: FideliaViewModel) {
     }
 
     if (showExport) {
-        val count = vm.cards.size
+        val count = vm.cards.size + vm.businessCards.size
         AlertDialog(
             onDismissRequest = { showExport = false },
             title = { Text("Exportar tarjetas") },
@@ -110,8 +117,8 @@ fun TransferSection(vm: FideliaViewModel) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         "Se creará un archivo con " + (if (count == 1) "tu tarjeta" else "tus $count tarjetas") +
-                            ", con sus imágenes y códigos de barras. Quien lo reciba podrá usarlas: " +
-                            "compártelo solo con quien quieras."
+                            " (de fidelización y de visita), con sus imágenes, códigos y teléfonos. " +
+                            "Quien lo reciba podrá usarlas: compártelo solo con quien quieras."
                     )
                     Button(
                         onClick = {
@@ -161,39 +168,92 @@ fun TransferSection(vm: FideliaViewModel) {
     }
 
     vm.importReport?.let { report ->
+        val nothingImported = report.totalAdded == 0 && report.totalSkipped == 0
+        // Si solo se anadieron tarjetas de un tipo, se ofrece ir directamente a verlas.
+        val goTo: (() -> Unit)? = when {
+            report.added > 0 && report.addedBusiness == 0 -> vm::showLoyaltyList
+            report.addedBusiness > 0 && report.added == 0 -> vm::showBusinessList
+            else -> null
+        }
         AlertDialog(
             onDismissRequest = vm::dismissImportReport,
-            title = {
-                Text(if (report.added == 0 && report.skipped == 0) "No se ha importado nada" else "Importación terminada")
-            },
+            title = { Text(if (nothingImported) "No se ha importado nada" else "Importación terminada") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Tarjetas añadidas: ${report.added}")
-                    if (report.skipped > 0) {
-                        Text("Ya las tenías (omitidas): ${report.skipped}")
-                    }
-                    if (report.renamed.isNotEmpty()) {
-                        Text(
-                            "Mismo nombre pero otro código de barras (añadidas con otro nombre): " +
-                                report.renamed.joinToString(", ") { "«$it»" }
+                Column(
+                    Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    if (report.hadLoyalty) {
+                        ReportBlock(
+                            title = "Tarjetas de fidelización",
+                            differsBy = "otro código de barras",
+                            added = report.added,
+                            skipped = report.skipped,
+                            renamed = report.renamed,
+                            invalid = report.invalid,
                         )
                     }
-                    if (report.invalid > 0) {
-                        Text("No válidas (no se han importado): ${report.invalid}")
+                    if (report.hadBusiness) {
+                        ReportBlock(
+                            title = "Tarjetas de visita",
+                            differsBy = "otros teléfonos",
+                            added = report.addedBusiness,
+                            skipped = report.skippedBusiness,
+                            renamed = report.renamedBusiness,
+                            invalid = report.invalidBusiness,
+                        )
+                    }
+                    if (!report.hadLoyalty && !report.hadBusiness) {
+                        Text("El archivo no contenía tarjetas.")
                     }
                 }
             },
             confirmButton = {
                 Button(onClick = {
                     vm.dismissImportReport()
-                    if (report.added > 0) vm.openCardList()
-                }) { Text(if (report.added > 0) "Ver mis tarjetas" else "Entendido") }
+                    goTo?.invoke()
+                }) {
+                    Text(
+                        when {
+                            goTo == null -> "Entendido"
+                            report.added > 0 -> "Ver mis tarjetas"
+                            else -> "Ver tarjetas de visita"
+                        }
+                    )
+                }
             },
-            dismissButton = if (report.added > 0) {
+            dismissButton = if (goTo != null) {
                 { TextButton(onClick = vm::dismissImportReport) { Text("Cerrar") } }
             } else {
                 null
             },
         )
+    }
+}
+
+@Composable
+private fun ReportBlock(
+    title: String,
+    differsBy: String,
+    added: Int,
+    skipped: Int,
+    renamed: List<String>,
+    invalid: Int,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        Text("Añadidas: $added")
+        if (skipped > 0) {
+            Text("Ya las tenías (omitidas): $skipped")
+        }
+        if (renamed.isNotEmpty()) {
+            Text(
+                "Mismo nombre pero $differsBy (añadidas con otro nombre): " +
+                    renamed.joinToString(", ") { "«$it»" }
+            )
+        }
+        if (invalid > 0) {
+            Text("No válidas (no se han importado): $invalid")
+        }
     }
 }

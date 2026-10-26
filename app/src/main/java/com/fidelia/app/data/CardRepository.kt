@@ -20,23 +20,39 @@ import java.util.UUID
  */
 class CardRepository(private val context: Context) {
 
-    private val jsonFile = File(context.filesDir, "cards.json")
-    private val backupFile = File(context.filesDir, "cards.json.bak")
     private val imagesDir = File(context.filesDir, IMAGES_DIR).apply { mkdirs() }
 
-    fun load(): List<LoyaltyCard> = parse(jsonFile) ?: parse(backupFile) ?: emptyList()
+    private val cardsFile = File(context.filesDir, "cards.json")
+    private val businessFile = File(context.filesDir, "business_cards.json")
+
+    // ---- Tarjetas de fidelizacion ----
+
+    fun load(): List<LoyaltyCard> = loadList(cardsFile) { it.toCard() }
+
+    fun save(cards: List<LoyaltyCard>): Boolean = saveList(cardsFile, cards) { it.toJson() }
+
+    // ---- Tarjetas de visita ----
+
+    fun loadBusiness(): List<BusinessCard> = loadList(businessFile) { it.toBusinessCard() }
+
+    fun saveBusiness(cards: List<BusinessCard>): Boolean = saveList(businessFile, cards) { it.toJson() }
+
+    private fun backupOf(file: File) = File(file.parentFile, file.name + ".bak")
+
+    private fun <T> loadList(file: File, toItem: (JSONObject) -> T): List<T> =
+        parseList(file, toItem) ?: parseList(backupOf(file), toItem) ?: emptyList()
 
     /** Escribe en un temporal y lo renombra: un corte a medias no deja el fichero roto. */
-    fun save(cards: List<LoyaltyCard>): Boolean = try {
+    private fun <T> saveList(file: File, items: List<T>, toJson: (T) -> JSONObject): Boolean = try {
         val array = JSONArray()
-        cards.forEach { array.put(it.toJson()) }
-        val tmp = File(context.filesDir, "cards.json.tmp")
+        items.forEach { array.put(toJson(it)) }
+        val tmp = File(file.parentFile, file.name + ".tmp")
         tmp.writeText(array.toString())
         // La copia solo se renueva si el fichero actual esta sano.
-        if (parse(jsonFile) != null) jsonFile.copyTo(backupFile, overwrite = true)
+        if (parseList(file) { it } != null) file.copyTo(backupOf(file), overwrite = true)
         Files.move(
             tmp.toPath(),
-            jsonFile.toPath(),
+            file.toPath(),
             StandardCopyOption.REPLACE_EXISTING,
             StandardCopyOption.ATOMIC_MOVE,
         )
@@ -91,20 +107,44 @@ class CardRepository(private val context: Context) {
     }
 
     /** Borra imagenes que ninguna tarjeta usa (restos de una carga cancelada). */
-    fun cleanupOrphans(cards: List<LoyaltyCard>) {
-        val used = cards.mapNotNull { it.imageFile }.toSet()
+    fun cleanupOrphans(cards: List<LoyaltyCard>, business: List<BusinessCard>) {
+        val used = cards.mapNotNull { it.imageFile }.toSet() + business.mapNotNull { it.imageFile }.toSet()
         imagesDir.listFiles()?.forEach { if (it.name !in used) it.delete() }
     }
 
-    private fun parse(file: File): List<LoyaltyCard>? {
+    private fun <T> parseList(file: File, toItem: (JSONObject) -> T): List<T>? {
         if (!file.exists()) return null
         return try {
             val array = JSONArray(file.readText())
-            List(array.length()) { array.getJSONObject(it).toCard() }
+            List(array.length()) { toItem(array.getJSONObject(it)) }
         } catch (e: Exception) {
             null
         }
     }
+
+    private fun BusinessCard.toJson() = JSONObject().apply {
+        put("id", id)
+        put("company", company)
+        put("holder", holder)
+        put("phone1", phone1)
+        put("phone2", phone2)
+        put("email", email)
+        tradeId?.let { put("tradeId", it) }
+        imageFile?.let { put("imageFile", it) }
+        put("createdAt", createdAt)
+    }
+
+    private fun JSONObject.toBusinessCard() = BusinessCard(
+        id = getString("id"),
+        company = optString("company"),
+        holder = optString("holder"),
+        phone1 = optString("phone1"),
+        phone2 = optString("phone2"),
+        tradeId = if (has("tradeId")) getString("tradeId") else null,
+        imageFile = if (has("imageFile")) getString("imageFile") else null,
+        createdAt = optLong("createdAt"),
+        email = optString("email"),
+    )
 
     private fun LoyaltyCard.toJson() = JSONObject().apply {
         put("id", id)

@@ -169,4 +169,4 @@ private fun GenericCardBox(modifier: Modifier) {
     }
 }
 
-private fun Color.shade(factor: Float) = Color(red * factor, green * factor, blue * factor, alpha)
+internal fun Color.shade(factor: Float) = Color(red * factor, green * factor, blue * factor, alpha)

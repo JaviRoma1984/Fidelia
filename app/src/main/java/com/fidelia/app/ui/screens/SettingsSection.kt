@@ -34,23 +34,24 @@ import com.fidelia.app.ui.FideliaViewModel
 import com.fidelia.app.ui.theme.AppPalette
 import com.fidelia.app.ui.theme.Palettes
 
-/** Configuracion: elegir la combinacion de colores de la app (las mismas que IntCom). */
+/** Elegir la combinacion de colores de la app (las mismas que IntCom). */
 @Composable
-fun SettingsSection(vm: FideliaViewModel) {
+fun ColorChoiceSection(vm: FideliaViewModel) {
+    // El margen de los lados lo pone la pantalla centrada que lo contiene.
     Column(
-        Modifier.padding(horizontal = 20.dp),
+        Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(
-            "Configuración",
+            "Combinación de colores",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
         Text(
-            "Elige la combinación de colores de la app.",
+            "Elige cómo quieres ver la app.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

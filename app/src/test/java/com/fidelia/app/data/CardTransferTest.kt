@@ -137,6 +137,70 @@ class CardTransferTest {
         assertEquals(1, read.cards.size)
     }
 
+    private fun business(company: String, phone1: String, tradeId: String? = null, image: String? = null) =
+        BusinessCard("b", company, "Titular $company", phone1, "", tradeId, image, 99L)
+
+    @Test
+    fun `las tarjetas de visita se exportan y se leen igual, con su foto`() {
+        val out = ByteArrayOutputStream()
+        CardTransfer.write(
+            cards = listOf(card("Decathlon", "5901234123457")),
+            readImage = { name -> if (name == "foto.jpg") photo else null },
+            out = out,
+            businessCards = listOf(
+                business("Fontanería Pérez", "600111222", tradeId = "fontanero"),
+                business("Con foto", "911222333", image = "foto.jpg"),
+            ),
+        )
+        val read = CardTransfer.read(ByteArrayInputStream(out.toByteArray()))
+
+        assertEquals(1, read.cards.size)
+        assertEquals(2, read.businessCards.size)
+        assertEquals(0, read.invalidBusiness)
+
+        val first = read.businessCards[0]
+        assertEquals("Fontanería Pérez", first.company)
+        assertEquals("Titular Fontanería Pérez", first.holder)
+        assertEquals("600111222", first.phone1)
+        assertEquals("fontanero", first.tradeId)
+        assertNull(first.image)
+
+        val second = read.businessCards[1]
+        assertNull(second.tradeId)
+        assertArrayEquals(photo, second.image)
+    }
+
+    @Test
+    fun `un archivo antiguo, sin tarjetas de visita, se sigue leyendo`() {
+        val json = """{"app":"Fidelia","version":1,"cards":[{"name":"Zara","barcodeValue":"9"}]}"""
+        val read = CardTransfer.read(ByteArrayInputStream(zip(mapOf("cards.json" to json))))
+        assertEquals(1, read.cards.size)
+        assertTrue(read.businessCards.isEmpty())
+        assertEquals(0, read.invalidBusiness)
+    }
+
+    @Test
+    fun `las tarjetas de visita sin empresa ni titular no son validas`() {
+        val json = """
+            {"app":"Fidelia","version":1,"cards":[],"businessCards":[
+              {"company":"Acme","phone1":"600"},
+              {"holder":"Solo titular"},
+              {"company":"  ","holder":""},
+              {"phone1":"123"}
+            ]}
+        """.trimIndent()
+        val read = CardTransfer.read(ByteArrayInputStream(zip(mapOf("cards.json" to json))))
+        assertEquals(listOf("Acme", ""), read.businessCards.map { it.company })
+        assertEquals(2, read.invalidBusiness)
+    }
+
+    @Test
+    fun `los telefonos importados se recortan a la longitud maxima`() {
+        val json = """{"app":"Fidelia","version":1,"cards":[],"businessCards":[{"company":"A","phone1":"${"6".repeat(80)}"}]}"""
+        val read = CardTransfer.read(ByteArrayInputStream(zip(mapOf("cards.json" to json))))
+        assertEquals(PhoneNumbers.MAX_LENGTH, read.businessCards.single().phone1.length)
+    }
+
     @Test
     fun `el nombre del archivo sugerido lleva la fecha y la extension`() {
         val name = CardTransfer.suggestedFileName(0L)

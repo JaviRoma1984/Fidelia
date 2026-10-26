@@ -42,16 +42,23 @@ import com.fidelia.app.data.Stores
 import com.fidelia.app.ui.FideliaViewModel
 import com.fidelia.app.ui.components.AppTopBar
 import com.fidelia.app.ui.components.CardArt
+import com.fidelia.app.ui.components.CenteredTextField
+import com.fidelia.app.ui.components.ScreenTitle
 
+/**
+ * La lista de tiendas con su logo. Con [forDraft] no se crea una tarjeta nueva: se elige el
+ * logo de la tarjeta que ya se esta editando en el formulario.
+ */
 @Composable
-fun StorePickerScreen(vm: FideliaViewModel) {
+fun StorePickerScreen(vm: FideliaViewModel, forDraft: Boolean = false) {
     var query by rememberSaveable { mutableStateOf("") }
     val stores = remember(query) { Stores.search(query) }
     val focusManager = LocalFocusManager.current
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { AppTopBar(title = "Elige la tienda", onBack = vm::back) },
+        // En la barra solo queda "Atras": el titulo va debajo, con el contenido.
+        topBar = { AppTopBar(title = "", onBack = vm::back) },
         bottomBar = {
             Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
                 Column(
@@ -60,43 +67,40 @@ fun StorePickerScreen(vm: FideliaViewModel) {
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     Text(
-                        "¿No ves tu tienda en la lista?",
+                        if (forDraft) "¿Ninguno te sirve?" else "¿No ves tu tienda en la lista?",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 8.dp),
                     )
                     FilledTonalButton(
-                        onClick = { vm.pickStore(null) },
+                        onClick = { if (forDraft) vm.chooseDraftStore(null) else vm.pickStore(null) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
                     ) {
-                        Text("Mi tienda no está en la lista")
+                        Text(if (forDraft) "Dejar sin logo" else "Mi tienda no está en la lista")
                     }
                 }
             }
         },
     ) { padding ->
         Column(Modifier.padding(padding)) {
-            OutlinedTextField(
+            ScreenTitle(if (forDraft) "Elige el logo" else "Elige la tienda")
+            CenteredTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("Buscar tienda…") },
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                trailingIcon = {
+                label = "Buscar tienda…",
+                leading = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                trailing = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { query = "" }) {
                             Icon(Icons.Rounded.Close, contentDescription = "Borrar búsqueda")
                         }
                     }
                 },
-                singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
 
             if (stores.isEmpty()) {
@@ -121,7 +125,7 @@ fun StorePickerScreen(vm: FideliaViewModel) {
                             imageFile = null,
                             modifier = Modifier.fillMaxWidth(),
                             description = store.name,
-                            onClick = { vm.pickStore(store) },
+                            onClick = { if (forDraft) vm.chooseDraftStore(store) else vm.pickStore(store) },
                         )
                     }
                 }

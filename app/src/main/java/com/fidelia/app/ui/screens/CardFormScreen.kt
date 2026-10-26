@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -64,6 +65,8 @@ import com.fidelia.app.ui.Screen
 import com.fidelia.app.ui.components.AppTopBar
 import com.fidelia.app.ui.components.BarcodeImage
 import com.fidelia.app.ui.components.CardArt
+import com.fidelia.app.ui.components.CenteredTextField
+import com.fidelia.app.ui.components.ScreenTitle
 import java.io.File
 
 /** Crear o editar una tarjeta: imagen, nombre y codigo de barras. */
@@ -111,12 +114,8 @@ fun CardFormScreen(vm: FideliaViewModel) {
     Scaffold(
         modifier = Modifier.imePadding(),
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            AppTopBar(
-                title = if (editing) "Editar tarjeta" else "Nueva tarjeta",
-                onBack = { tryExit() },
-            )
-        },
+        // En la barra solo queda "Atras": el titulo va debajo, con el contenido.
+        topBar = { AppTopBar(title = "", onBack = { tryExit() }) },
         bottomBar = {
             val missing = when {
                 d.name.isBlank() -> "Ponle un nombre a la tarjeta para poder guardarla."
@@ -157,6 +156,8 @@ fun CardFormScreen(vm: FideliaViewModel) {
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            ScreenTitle(if (editing) "Editar tarjeta" else "Nueva tarjeta")
+
             // 1. Imagen
             StepHeader(1, "Imagen de la tarjeta", done = d.imageFile != null || d.storeId != null)
             CardArt(
@@ -197,6 +198,18 @@ fun CardFormScreen(vm: FideliaViewModel) {
                     Text("Galería", maxLines = 1)
                 }
             }
+            // Tambien se puede elegir uno de los logos de la app (p. ej. al editar una tarjeta sin logo).
+            OutlinedButton(
+                onClick = vm::openLogoChoice,
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+            ) {
+                Icon(Icons.Rounded.Storefront, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(if (d.storeId != null) "Cambiar el logo de la lista" else "Elegir un logo de la lista", maxLines = 1)
+            }
             if (d.imageFile != null) {
                 TextButton(onClick = vm::clearImage) {
                     Text(if (d.storeId != null) "Usar el logo de la tienda" else "Quitar la imagen")
@@ -207,18 +220,15 @@ fun CardFormScreen(vm: FideliaViewModel) {
 
             // 2. Nombre
             StepHeader(2, "Nombre de la tarjeta", done = d.name.isNotBlank())
-            OutlinedTextField(
+            CenteredTextField(
                 value = d.name,
                 onValueChange = vm::setName,
-                label = { Text("Nombre") },
-                singleLine = true,
+                label = "Nombre de la tarjeta",
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Done,
                 ),
                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(),
             )
 
             Spacer(Modifier.height(8.dp))
@@ -297,7 +307,7 @@ fun CardFormScreen(vm: FideliaViewModel) {
 }
 
 @Composable
-private fun StepHeader(number: Int, title: String, done: Boolean) {
+internal fun StepHeader(number: Int, title: String, done: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier

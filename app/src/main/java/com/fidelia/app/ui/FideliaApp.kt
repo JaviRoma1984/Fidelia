@@ -22,11 +22,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.fidelia.app.ui.screens.BusinessDetailScreen
+import com.fidelia.app.ui.screens.BusinessFormScreen
+import com.fidelia.app.ui.screens.BusinessListScreen
+import com.fidelia.app.ui.screens.BusinessMenuScreen
 import com.fidelia.app.ui.screens.CardDetailScreen
 import com.fidelia.app.ui.screens.CardFormScreen
 import com.fidelia.app.ui.screens.CardListScreen
 import com.fidelia.app.ui.screens.HomeScreen
+import com.fidelia.app.ui.screens.LoyaltyMenuScreen
 import com.fidelia.app.ui.screens.ScannerScreen
+import com.fidelia.app.ui.screens.SettingsScreen
 import com.fidelia.app.ui.screens.StorePickerScreen
 
 @Composable
@@ -64,11 +70,18 @@ fun FideliaApp(vm: FideliaViewModel) {
         ) { screen ->
             when (screen) {
                 Screen.Home -> HomeScreen(vm)
+                Screen.Loyalty -> LoyaltyMenuScreen(vm)
+                Screen.Business -> BusinessMenuScreen(vm)
+                Screen.Settings -> SettingsScreen(vm)
                 Screen.Stores -> StorePickerScreen(vm)
+                Screen.StoreChoice -> StorePickerScreen(vm, forDraft = true)
                 Screen.Form -> CardFormScreen(vm)
                 Screen.Scanner -> ScannerScreen(vm)
                 Screen.CardList -> CardListScreen(vm)
                 is Screen.Detail -> CardDetailScreen(vm, screen.id)
+                Screen.BusinessList -> BusinessListScreen(vm)
+                Screen.BusinessForm -> BusinessFormScreen(vm)
+                is Screen.BusinessDetail -> BusinessDetailScreen(vm, screen.id)
             }
         }
 

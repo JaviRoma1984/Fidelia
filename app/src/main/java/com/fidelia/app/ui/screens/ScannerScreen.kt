@@ -98,6 +98,7 @@ import com.fidelia.app.barcode.DetectedBarcode
 import com.fidelia.app.data.decodeBitmap
 import com.fidelia.app.ui.FideliaViewModel
 import com.fidelia.app.ui.components.BarcodeImage
+import com.fidelia.app.ui.components.CenteredTextField
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.Dispatchers
@@ -491,13 +492,11 @@ private fun ManualCodeDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit)
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Escribe el número que aparece debajo del código de barras de tu tarjeta.")
-                OutlinedTextField(
+                CenteredTextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text("Número") },
-                    singleLine = true,
+                    label = "Número",
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                    modifier = Modifier.fillMaxWidth(),
                 )
                 if (preview != null) {
                     Box(

@@ -16,6 +16,9 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
+        // Nombre bajo el icono. La copia de pruebas lo cambia (ver buildTypes.debug).
+        manifestPlaceholders["appLabel"] = "Fidelia"
+
         // ML Kit trae sus .so por arquitectura. Solo arm64-v8a: los moviles de
         // pruebas y cualquiera desde 2017 lo son (mismo criterio que HogarSeguro).
         ndk {
@@ -28,7 +31,10 @@ android {
             isDebuggable = true
             // Para probar en el movil una copia aparte, con sus propios datos, sin tocar
             // la app real: gradlew assembleDebug -PidSuffix=.pruebas
-            applicationIdSuffix = (project.findProperty("idSuffix") as String?).orEmpty()
+            val suffix = (project.findProperty("idSuffix") as String?).orEmpty()
+            applicationIdSuffix = suffix
+            // Para no confundir las dos apps en el movil: la copia de pruebas se llama distinto.
+            if (suffix.isNotEmpty()) manifestPlaceholders["appLabel"] = "Fidelia PRUEBAS"
         }
         release {
             isMinifyEnabled = false

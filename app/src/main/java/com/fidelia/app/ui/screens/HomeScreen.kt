@@ -2,32 +2,35 @@ package com.fidelia.app.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AddCard
-import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Badge
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,79 +41,106 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.fidelia.app.R
 import com.fidelia.app.ui.FideliaViewModel
+import com.fidelia.app.ui.components.ActionCard
 import com.fidelia.app.ui.theme.LocalBrandColors
+
+/**
+ * Inter (licencia SIL OFL 1.1, Rasmus Andersson): una tipografia sobria y moderna para el
+ * nombre de la app. Los ficheros son los que trae Android Studio.
+ */
+private val InterFamily = FontFamily(
+    Font(R.font.inter_regular, FontWeight.Normal),
+    Font(R.font.inter_semibold, FontWeight.SemiBold),
+)
+
+/** Hueco entre la cabecera y la barra de la hora; el mismo que hay entre los botones de copia y la base. */
+private val ScreenMargin = 12.dp
 
 @Composable
 fun HomeScreen(vm: FideliaViewModel) {
-    val count = vm.cards.size
-    val countText = when (count) {
-        0 -> "Aún no hay tarjetas guardadas"
-        1 -> "1 tarjeta guardada"
-        else -> "$count tarjetas guardadas"
-    }
-
-    Box(Modifier.fillMaxSize()) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        // La cabecera empieza debajo de la barra de la hora y las notificaciones del movil.
-        Header(
-            Modifier
-                .statusBarsPadding()
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp)
-        )
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val viewportHeight = maxHeight
+        // El contenido ocupa como minimo toda la pantalla: la cabecera se estira con el
+        // espacio que sobra, de modo que abajo queda el mismo margen que arriba. Si el
+        // contenido no cabe (letra muy grande, pantalla pequena), la pantalla se desplaza.
         Column(
-            Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = viewportHeight)
+                .verticalScroll(rememberScrollState())
         ) {
-            ActionCard(
-                title = "Mostrar tarjetas",
-                subtitle = countText,
-                icon = Icons.Rounded.Style,
-                filled = true,
-                onClick = vm::openCardList,
+            // La cabecera empieza debajo de la barra de la hora y las notificaciones del movil.
+            Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+            Spacer(Modifier.height(ScreenMargin))
+            Header(
+                onSettings = vm::openSettings,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp)
+                    .heightIn(min = 170.dp),
             )
-            ActionCard(
-                title = "Añadir tarjeta",
-                subtitle = "Guarda una tarjeta nueva en tu móvil",
-                icon = Icons.Rounded.AddCard,
-                filled = false,
-                onClick = vm::startNew,
-            )
+            Column(
+                Modifier.padding(horizontal = 20.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                ActionCard(
+                    title = "Tarjetas de fidelización",
+                    subtitle = countText(vm.cards.size),
+                    icon = Icons.Rounded.Style,
+                    onClick = vm::openLoyaltyMenu,
+                )
+                ActionCard(
+                    title = "Tarjetas de visita",
+                    subtitle = countText(vm.businessCards.size),
+                    icon = Icons.Rounded.Badge,
+                    onClick = vm::openBusinessMenu,
+                )
+            }
+            TransferSection(vm)
+            // Margen de abajo igual al de arriba, medido desde la barra de botones del movil.
+            Spacer(Modifier.height(ScreenMargin))
+            Spacer(Modifier.navigationBarsPadding())
         }
-        TransferSection(vm)
-        Spacer(Modifier.height(28.dp))
-        SettingsSection(vm)
-        Spacer(Modifier.height(28.dp))
-        Spacer(Modifier.navigationBarsPadding())
-    }
-    // Fondo fijo bajo la hora y los iconos del movil: al desplazar, el contenido no se mezcla con ellos.
-    Box(
-        Modifier
-            .align(Alignment.TopStart)
-            .fillMaxWidth()
-            .windowInsetsTopHeight(WindowInsets.statusBars)
-            .background(MaterialTheme.colorScheme.background)
-    )
+        // Fondo fijo bajo la hora y los iconos del movil: al desplazar, el contenido no se mezcla con ellos.
+        Box(
+            Modifier
+                .align(Alignment.TopStart)
+                .fillMaxWidth()
+                .windowInsetsTopHeight(WindowInsets.statusBars)
+                .background(MaterialTheme.colorScheme.background)
+        )
     }
 }
 
-/** Cabecera de la pantalla principal: logo, nombre y una frase corta, con los colores de la combinacion elegida. */
+internal fun countText(count: Int): String = when (count) {
+    0 -> "Aún no hay tarjetas guardadas"
+    1 -> "1 tarjeta guardada"
+    else -> "$count tarjetas guardadas"
+}
+
+/** Cabecera: logo, nombre y una frase corta, con los colores de la combinacion elegida y la rueda de configuracion. */
 @Composable
-private fun Header(modifier: Modifier = Modifier) {
+private fun Header(onSettings: () -> Unit, modifier: Modifier = Modifier) {
     val brand = LocalBrandColors.current
-    Box(
+    BoxWithConstraints(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(28.dp))
             .background(Brush.linearGradient(listOf(brand.headerStart, brand.headerEnd)))
     ) {
+        // Todo lo de dentro se dimensiona a partir de la altura de la cabecera, que se estira
+        // con la pantalla: asi el contenido nunca se ve pequeno dentro de un recuadro grande.
+        val h = maxHeight
         Canvas(Modifier.matchParentSize()) {
             drawCircle(
                 brand.onHeader.copy(alpha = 0.10f),
@@ -123,25 +153,95 @@ private fun Header(modifier: Modifier = Modifier) {
                 center = Offset(size.width * 0.0f, size.height * 1.05f),
             )
         }
-        Row(
-            Modifier.padding(horizontal = 22.dp, vertical = 40.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            LogoMark(Modifier.size(84.dp), barColor = brand.headerStart)
-            Spacer(Modifier.width(20.dp))
-            Column {
+        if (h >= 230.dp) {
+            // Cabecera alta: logo, nombre y frase apilados y centrados, a escala con la altura.
+            val titleSize = (h.value * 0.20f).sp
+            Column(
+                Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 22.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                LogoMark(Modifier.size(h * 0.36f), barColor = brand.headerStart)
+                Spacer(Modifier.height(h * 0.045f))
                 Text(
                     "Fidelia",
-                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold),
+                    style = TextStyle(
+                        fontFamily = InterFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = titleSize,
+                        lineHeight = titleSize * 1.08f,
+                        letterSpacing = (-1.5).sp,
+                    ),
                     color = brand.onHeader,
+                    textAlign = TextAlign.Center,
                 )
-                Spacer(Modifier.height(2.dp))
                 Text(
-                    "Tus tarjetas,\nsiempre a mano",
-                    style = MaterialTheme.typography.bodyLarge,
+                    "Tus tarjetas, siempre a mano",
+                    style = TextStyle(
+                        fontFamily = InterFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = (h.value * 0.062f).coerceAtLeast(16f).sp,
+                        letterSpacing = 0.3.sp,
+                    ),
                     color = brand.onHeader.copy(alpha = 0.92f),
+                    textAlign = TextAlign.Center,
                 )
             }
+        } else {
+            // Cabecera baja (pantalla pequena o letra muy grande): en una fila.
+            val titleSize = (h.value * 0.24f).sp
+            Row(
+                Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 22.dp, vertical = 24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                LogoMark(Modifier.size(h * 0.5f), barColor = brand.headerStart)
+                Spacer(Modifier.width(20.dp))
+                Column {
+                    Text(
+                        "Fidelia",
+                        style = TextStyle(
+                            fontFamily = InterFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = titleSize,
+                            lineHeight = titleSize * 1.1f,
+                            letterSpacing = (-1.2).sp,
+                        ),
+                        color = brand.onHeader,
+                    )
+                    Text(
+                        "Tus tarjetas,\nsiempre a mano",
+                        style = TextStyle(
+                            fontFamily = InterFamily,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp,
+                            lineHeight = 20.sp,
+                            letterSpacing = 0.2.sp,
+                        ),
+                        color = brand.onHeader.copy(alpha = 0.92f),
+                    )
+                }
+            }
+        }
+        // Boton redondo con la rueda dentada: lleva a la configuracion.
+        Box(
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(12.dp)
+                .size(46.dp)
+                .clip(CircleShape)
+                .background(brand.onHeader.copy(alpha = 0.18f))
+                .clickable(role = Role.Button, onClick = onSettings),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Rounded.Settings,
+                contentDescription = "Configuración",
+                tint = brand.onHeader,
+                modifier = Modifier.size(26.dp),
+            )
         }
     }
 }
@@ -170,57 +270,6 @@ private fun LogoMark(modifier: Modifier = Modifier, barColor: Color = Color(0xFF
         for ((bar, gap) in pattern) {
             drawRect(barColor, Offset(x, barTop), Size(bar * unit, barH))
             x += (bar + gap) * unit
-        }
-    }
-}
-
-@Composable
-private fun ActionCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    filled: Boolean,
-    onClick: () -> Unit,
-) {
-    val colors = MaterialTheme.colorScheme
-    val container = if (filled) colors.primary else colors.surface
-    val content = if (filled) colors.onPrimary else colors.onSurface
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(28.dp),
-        color = container,
-        contentColor = content,
-        shadowElevation = if (filled) 8.dp else 2.dp,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            Modifier.padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier
-                    .size(58.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(if (filled) Color.White.copy(alpha = 0.18f) else colors.primaryContainer),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = if (filled) colors.onPrimary else colors.primary,
-                    modifier = Modifier.size(30.dp),
-                )
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleLarge)
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = content.copy(alpha = 0.8f),
-                )
-            }
-            Icon(Icons.Rounded.ChevronRight, contentDescription = null)
         }
     }
 }

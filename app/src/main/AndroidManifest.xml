@@ -3,6 +3,13 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- Llamar desde la ficha de una tarjeta de visita (siempre tras confirmarlo). Si el
+         usuario no da el permiso, se abre el marcador con el numero ya escrito. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
     <!-- La camara no es imprescindible: sin ella se puede escribir el codigo
          a mano o leerlo de una imagen de la galeria. -->
     <uses-feature
@@ -16,7 +23,7 @@
         android:allowBackup="true"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="${appLabel}"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Fidelia">
