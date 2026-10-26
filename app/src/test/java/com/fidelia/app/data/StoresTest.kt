@@ -33,6 +33,15 @@ class StoresTest {
     }
 
     @Test
+    fun `los logos genericos de biblioteca y gimnasio llevan un icono`() {
+        assertEquals("Biblioteca", Stores.find("biblioteca")!!.name)
+        assertTrue(Stores.find("biblioteca")!!.icon != null)
+        assertEquals("Gimnasio", Stores.find("gimnasio")!!.name)
+        assertTrue(Stores.find("gimnasio")!!.icon != null)
+        assertEquals("Gimnasio", Stores.search("gimnas").single().name)
+    }
+
+    @Test
     fun `el listado esta ordenado sin tener en cuenta los acentos`() {
         val nombres = Stores.all.map { it.name }
         val a = nombres.indexOf("Alimerka")

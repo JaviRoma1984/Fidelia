@@ -1,6 +1,7 @@
 package com.fidelia.app.data
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -197,6 +198,7 @@ object Stores {
         Store("forum-sport", "Forum Sport", Color(0xFF1B1B1B)),
         Store("fosters", "Foster's Hollywood", Color(0xFF1B2A41), Color(0xFFFFC107)),
         Store("galp", "Galp", Color(0xFFFF7A00)),
+        Store("gimnasio", "Gimnasio", Color(0xFFEA580C), icon = Icons.Rounded.FitnessCenter),
         Store("esoil", "Esoil", Color(0xFF008C95)),
         Store("hm", "H&M", Color(0xFFE50010)),
         Store("hipercor", "Hipercor", Color(0xFF2E7D32)),
