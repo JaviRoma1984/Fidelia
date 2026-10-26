@@ -20,6 +20,10 @@ código de barras en caja. Sin cuentas, sin internet: todo se queda en el móvil
    el mismo nombre y el mismo código que una existente, se omite; si tiene el mismo
    nombre pero otro código, se añade como «Nombre (importada)». Importar dos veces el
    mismo archivo no duplica nada.
+5. **Configuración** (pantalla de inicio): elegir la combinación de colores de la app.
+   Son las 8 de IntCom (Claro, Oscuro, Rosa, Blanco y manzana, Blanco y naranja,
+   Blanco y morado, Rojo y negro, Lima y negro) más «Por defecto» (el índigo de siempre,
+   claro u oscuro según el móvil). La elegida se guarda y se mantiene al cerrar la app.
 
 Si la cámara no lee el código, se puede escribir el número a mano o leerlo de una
 imagen de la galería (por ejemplo, una captura de pantalla).
@@ -33,6 +37,11 @@ imagen de la galería (por ejemplo, una captura de pantalla).
   comercial Parque Principado (Oviedo), tomados de su web el 26-10-2026. Los colores
   de marca son aproximados; las tiendas sin color conocido usan un color automático.
   `StoresTest` comprueba que no haya ids repetidos y que la búsqueda ignore acentos.
+- Las combinaciones salen de `assets/web/assets/css/style.css` de IntCom (bloques
+  `body[data-theme=...]`; la versión de PC y la de smartphone son iguales). En Material
+  un solo color «primario» sirve de fondo de botón y de texto, así que de los tonos de
+  cada combinación (`primary`, `primary-ink`, `line`) se usa el que mejor contraste
+  tiene con su fondo. `PalettesTest` comprueba que todas se leen bien.
 - Datos en el almacenamiento privado de la app: `cards.json` (con copia `.bak`) e
   imágenes en `images/`. Se escribe con fichero temporal + renombrado para que un
   corte no deje el fichero a medias.

@@ -1,6 +1,7 @@
 package com.fidelia.app.ui
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,6 +16,7 @@ import com.fidelia.app.data.CardTransfer
 import com.fidelia.app.data.LoyaltyCard
 import com.fidelia.app.data.Store
 import com.fidelia.app.data.Stores
+import com.fidelia.app.ui.theme.Palettes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,6 +61,22 @@ class FideliaViewModel(application: Application) : AndroidViewModel(application)
         private set
 
     val isDraftDirty: Boolean get() = draft != baseline
+
+    // ---- Configuracion ----
+
+    private val settings = application.getSharedPreferences("fidelia_settings", Context.MODE_PRIVATE)
+
+    /** Combinacion de colores elegida: un id de [Palettes.all] o [Palettes.DEFAULT_ID]. */
+    var themeId by mutableStateOf(
+        settings.getString("theme", null)?.takeIf(Palettes::isKnown) ?: Palettes.DEFAULT_ID
+    )
+        private set
+
+    fun setTheme(id: String) {
+        if (!Palettes.isKnown(id)) return
+        themeId = id
+        settings.edit().putString("theme", id).apply()
+    }
 
     init {
         repo.cleanupOrphans(cards)

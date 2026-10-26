@@ -1,6 +1,9 @@
 package com.fidelia.app.data
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import java.text.Normalizer
 
 /**
@@ -15,6 +18,8 @@ data class Store(
     val textColor: Color = Color.White,
     /** Si el "logo" lleva el nombre en varios colores (p. ej. tienda + animal). */
     val logoParts: List<NamePart>? = null,
+    /** Si el "logo" lleva un dibujo encima del nombre (p. ej. un libro en la biblioteca). */
+    val icon: ImageVector? = null,
 )
 
 data class NamePart(val text: String, val color: Color)
@@ -173,6 +178,7 @@ object Stores {
         Store("aldi", "Aldi", Color(0xFF00005F)),
         Store("alimerka", "Alimerka", Color(0xFFFFD100)),
         Store("alvaro-moreno", "Álvaro Moreno", Color(0xFF1F2A44)),
+        Store("biblioteca", "Biblioteca", Color(0xFF7A4B2A), icon = Icons.Rounded.MenuBook),
         Store("bp", "BP", Color(0xFF009A3D), Color(0xFFFFE600)),
         Store("burger-king", "Burger King", Color(0xFFD62300)),
         Store("caprabo", "Caprabo", Color(0xFFD71920)),
@@ -191,10 +197,12 @@ object Stores {
         Store("forum-sport", "Forum Sport", Color(0xFF1B1B1B)),
         Store("fosters", "Foster's Hollywood", Color(0xFF1B2A41), Color(0xFFFFC107)),
         Store("galp", "Galp", Color(0xFFFF7A00)),
+        Store("esoil", "Esoil", Color(0xFF008C95)),
         Store("hm", "H&M", Color(0xFFE50010)),
         Store("hipercor", "Hipercor", Color(0xFF2E7D32)),
         Store("iberia", "Iberia Plus", Color(0xFFD7192D)),
         Store("ikea", "IKEA Family", Color(0xFF0058A3), Color(0xFFFFDA1A)),
+        Store("kiabi", "Kiabi", Color(0xFF0099D8)),
         Store("leroy-merlin", "Leroy Merlin", Color(0xFF67B32E)),
         Store("lidl", "Lidl", Color(0xFF0050AA), Color(0xFFFFF000)),
         Store("mango", "Mango", Color(0xFF111111)),

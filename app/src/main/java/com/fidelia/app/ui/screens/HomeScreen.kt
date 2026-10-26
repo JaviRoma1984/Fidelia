@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,7 +24,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddCard
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,12 +33,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fidelia.app.ui.FideliaViewModel
+import com.fidelia.app.ui.theme.LocalBrandColors
 
 @Composable
 fun HomeScreen(vm: FideliaViewModel) {
@@ -47,14 +53,20 @@ fun HomeScreen(vm: FideliaViewModel) {
         else -> "$count tarjetas guardadas"
     }
 
+    Box(Modifier.fillMaxSize()) {
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        Header()
+        // La cabecera empieza debajo de la barra de la hora y las notificaciones del movil.
+        Header(
+            Modifier
+                .statusBarsPadding()
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+        )
         Column(
-            Modifier.padding(horizontal = 20.dp, vertical = 24.dp),
+            Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             ActionCard(
@@ -73,57 +85,91 @@ fun HomeScreen(vm: FideliaViewModel) {
             )
         }
         TransferSection(vm)
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(28.dp))
+        SettingsSection(vm)
+        Spacer(Modifier.height(28.dp))
         Spacer(Modifier.navigationBarsPadding())
+    }
+    // Fondo fijo bajo la hora y los iconos del movil: al desplazar, el contenido no se mezcla con ellos.
+    Box(
+        Modifier
+            .align(Alignment.TopStart)
+            .fillMaxWidth()
+            .windowInsetsTopHeight(WindowInsets.statusBars)
+            .background(MaterialTheme.colorScheme.background)
+    )
     }
 }
 
+/** Cabecera de la pantalla principal: logo, nombre y una frase corta, con los colores de la combinacion elegida. */
 @Composable
-private fun Header() {
+private fun Header(modifier: Modifier = Modifier) {
+    val brand = LocalBrandColors.current
     Box(
-        Modifier
+        modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFF4338CA), Color(0xFF7C3AED))))
+            .clip(RoundedCornerShape(28.dp))
+            .background(Brush.linearGradient(listOf(brand.headerStart, brand.headerEnd)))
     ) {
         Canvas(Modifier.matchParentSize()) {
             drawCircle(
-                Color.White.copy(alpha = 0.10f),
-                radius = size.width * 0.38f,
-                center = Offset(size.width * 0.92f, size.height * 0.10f),
+                brand.onHeader.copy(alpha = 0.10f),
+                radius = size.height * 1.0f,
+                center = Offset(size.width * 0.98f, size.height * 0.02f),
             )
             drawCircle(
-                Color.White.copy(alpha = 0.07f),
-                radius = size.width * 0.30f,
-                center = Offset(size.width * 0.05f, size.height * 0.95f),
+                brand.onHeader.copy(alpha = 0.07f),
+                radius = size.height * 0.75f,
+                center = Offset(size.width * 0.0f, size.height * 1.05f),
             )
         }
-        Column(
-            Modifier
-                .statusBarsPadding()
-                .padding(start = 24.dp, end = 24.dp, top = 28.dp, bottom = 40.dp)
+        Row(
+            Modifier.padding(horizontal = 22.dp, vertical = 40.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color.White.copy(alpha = 0.18f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Rounded.CreditCard, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp))
+            LogoMark(Modifier.size(84.dp), barColor = brand.headerStart)
+            Spacer(Modifier.width(20.dp))
+            Column {
+                Text(
+                    "Fidelia",
+                    style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold),
+                    color = brand.onHeader,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "Tus tarjetas,\nsiempre a mano",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = brand.onHeader.copy(alpha = 0.92f),
+                )
             }
-            Spacer(Modifier.height(20.dp))
-            Text(
-                "Fidelia",
-                style = MaterialTheme.typography.displaySmall,
-                color = Color.White,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Todas tus tarjetas de fidelidad, siempre contigo.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.9f),
-            )
+        }
+    }
+}
+
+/** El mismo logo que el icono de la app: una tarjeta blanca con un codigo de barras. */
+@Composable
+private fun LogoMark(modifier: Modifier = Modifier, barColor: Color = Color(0xFF4338CA)) {
+    Canvas(modifier) {
+        val s = size.minDimension
+        drawRoundRect(Color.White.copy(alpha = 0.20f), cornerRadius = CornerRadius(s * 0.28f))
+
+        val cardW = s * 0.68f
+        val cardH = s * 0.48f
+        val left = (s - cardW) / 2f
+        val top = (s - cardH) / 2f
+        drawRoundRect(Color.White, Offset(left, top), Size(cardW, cardH), CornerRadius(s * 0.10f))
+
+        // Barras: (anchura de la barra, hueco que sigue), en unidades.
+        val pattern = listOf(2f to 1f, 1f to 1f, 3f to 1f, 1f to 1f, 2f to 1f, 1f to 1f, 3f to 1f, 1f to 1f, 2f to 0f)
+        val units = pattern.sumOf { (bar, gap) -> (bar + gap).toDouble() }.toFloat()
+        val innerW = cardW * 0.70f
+        val unit = innerW / units
+        val barH = cardH * 0.52f
+        val barTop = top + (cardH - barH) / 2f
+        var x = left + (cardW - innerW) / 2f
+        for ((bar, gap) in pattern) {
+            drawRect(barColor, Offset(x, barTop), Size(bar * unit, barH))
+            x += (bar + gap) * unit
         }
     }
 }

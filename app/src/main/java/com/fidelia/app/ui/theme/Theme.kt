@@ -8,6 +8,8 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -79,12 +81,36 @@ private val FideliaTypography = Typography(
     labelLarge = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 20.sp),
 )
 
+private val DefaultBrand = BrandColors(
+    headerStart = Color(0xFF4338CA),
+    headerEnd = Color(0xFF7C3AED),
+    onHeader = Color.White,
+)
+
+/** Colores de la cabecera de la pantalla principal (cambian con la combinacion elegida). */
+val LocalBrandColors = staticCompositionLocalOf { DefaultBrand }
+
+/** Si la apariencia es oscura: la de la combinacion elegida o, en la predeterminada, la del movil. */
 @Composable
-fun FideliaTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
-        shapes = FideliaShapes,
-        typography = FideliaTypography,
-        content = content,
-    )
+fun isFideliaDark(paletteId: String): Boolean =
+    Palettes.byId(paletteId)?.isDark ?: isSystemInDarkTheme()
+
+/**
+ * [paletteId] es una de [Palettes.all] (las combinaciones de IntCom) o [Palettes.DEFAULT_ID]
+ * para la apariencia de siempre (indigo, clara u oscura segun el movil).
+ */
+@Composable
+fun FideliaTheme(paletteId: String = Palettes.DEFAULT_ID, content: @Composable () -> Unit) {
+    val palette = Palettes.byId(paletteId)
+    val systemDark = isSystemInDarkTheme()
+    val scheme = palette?.toColorScheme() ?: if (systemDark) DarkColors else LightColors
+    val brand = palette?.toBrandColors() ?: DefaultBrand
+    CompositionLocalProvider(LocalBrandColors provides brand) {
+        MaterialTheme(
+            colorScheme = scheme,
+            shapes = FideliaShapes,
+            typography = FideliaTypography,
+            content = content,
+        )
+    }
 }

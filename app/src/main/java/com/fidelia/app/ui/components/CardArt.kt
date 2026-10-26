@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -92,7 +93,8 @@ private fun StoreLogoBox(store: Store, modifier: Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         // Tamano relativo al ancho de la tarjeta, sin depender del zoom de fuente.
-        val textSize = with(LocalDensity.current) { (maxWidth * 0.13f).toSp() }
+        val cardWidth = maxWidth
+        val textSize = with(LocalDensity.current) { (cardWidth * 0.13f).toSp() }
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
                 Color.White.copy(alpha = 0.10f),
@@ -118,18 +120,35 @@ private fun StoreLogoBox(store: Store, modifier: Modifier) {
         } else {
             AnnotatedString(store.name)
         }
-        Text(
-            text = label,
-            color = store.textColor,
-            fontSize = textSize,
-            lineHeight = textSize * 1.1f,
-            fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center,
-            style = TextStyle(shadow = shadow),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = maxWidth * 0.08f),
-        )
+        val nameText: @Composable () -> Unit = {
+            Text(
+                text = label,
+                color = store.textColor,
+                fontSize = textSize,
+                lineHeight = textSize * 1.1f,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+                style = TextStyle(shadow = shadow),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = maxWidth * 0.08f),
+            )
+        }
+        val icon = store.icon
+        if (icon != null) {
+            // Dibujo encima del nombre (p. ej. el libro de la biblioteca).
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = store.textColor,
+                    modifier = Modifier.size(cardWidth * 0.26f),
+                )
+                nameText()
+            }
+        } else {
+            nameText()
+        }
     }
 }
 
