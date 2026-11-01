@@ -30,6 +30,7 @@ import com.fidelia.app.ui.screens.CardDetailScreen
 import com.fidelia.app.ui.screens.CardFormScreen
 import com.fidelia.app.ui.screens.CardListScreen
 import com.fidelia.app.ui.screens.HomeScreen
+import com.fidelia.app.ui.screens.ImportReportDialog
 import com.fidelia.app.ui.screens.LoyaltyMenuScreen
 import com.fidelia.app.ui.screens.ScannerScreen
 import com.fidelia.app.ui.screens.SettingsScreen
@@ -93,5 +94,6 @@ fun FideliaApp(vm: FideliaViewModel) {
                 .padding(16.dp),
         )
     }
+    ImportReportDialog(vm)
     }
 }

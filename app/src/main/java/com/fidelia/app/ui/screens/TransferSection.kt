@@ -167,6 +167,14 @@ fun TransferSection(vm: FideliaViewModel) {
         )
     }
 
+}
+
+/**
+ * Resumen de una importacion. Va en la raiz de la app y no en la pantalla principal porque
+ * un archivo .fidelia abierto desde otra app puede llegar con cualquier pantalla abierta.
+ */
+@Composable
+fun ImportReportDialog(vm: FideliaViewModel) {
     vm.importReport?.let { report ->
         val nothingImported = report.totalAdded == 0 && report.totalSkipped == 0
         // Si solo se anadieron tarjetas de un tipo, se ofrece ir directamente a verlas.

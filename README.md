@@ -52,6 +52,14 @@ y añade las tarjetas, con estas reglas:
   se añade como «Nombre (importada)»;
 - importar dos veces el mismo archivo no duplica nada.
 
+**Abrir con Fidelia**: al tocar un archivo `.fidelia` recibido (WhatsApp, correo, el
+gestor de archivos…) Android ofrece abrirlo con Fidelia, y también aparece en el menú de
+compartir. Se importa igual que con el botón Importar, con la app cerrada o abierta en
+cualquier pantalla, y se muestra el mismo resumen. Para eso la pantalla principal es
+`singleTask` (una sola ventana, que recibe el archivo en `onNewIntent`). WhatsApp entrega
+los archivos que no conoce como `application/octet-stream`, así que Fidelia también puede
+aparecer para otros archivos genéricos; si no es una copia suya, lo dice y no importa nada.
+
 ### Todas las pantallas tienen botón «Atrás»
 
 Arriba solo queda «Atrás». El título y el contenido van debajo; en los menús y la
